@@ -19,12 +19,12 @@ st.write("Ask questions in English and query your MySQL database.")
 
 host = st.text_input(
     label="Please provide your database host",
-    placeholder="localhost"
+    placeholder="Enter database host"
 )
 
 user = st.text_input(
     label="Please provide your database user",
-    placeholder="root"
+    placeholder="Enter database user"
 )
 
 password = st.text_input(
@@ -35,7 +35,7 @@ password = st.text_input(
 
 database = st.text_input(
     label="Please provide your database name",
-    placeholder="universit"
+    placeholder="Enter database name"
 )
 
 port = st.number_input(
