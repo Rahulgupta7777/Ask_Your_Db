@@ -8,7 +8,7 @@ import socket
 import ipaddress
 
 st.set_page_config(
-    page_title="NL → SQL Generator",
+    page_title="Ask Your sql database questions",
     layout="wide"
 )
 
