@@ -2,7 +2,10 @@ import streamlit as st
 from sql_generator import SQLQueryGenerator
 from db_executor import DatabaseExecutor
 from prompt_config import build_system_prompt
-
+import mysql.connector
+from mysql.connector import Error
+import socket
+import ipaddress
 
 st.set_page_config(
     page_title="NL → SQL Generator",
@@ -42,16 +45,41 @@ port = st.number_input(
 )
 
 
+
+def is_local_or_private(host_addr):
+    """
+    Checks if a hostname or IP is loopback or private.
+    Returns (True/False, "Reason")
+    """
+    try:
+        ip_str = socket.gethostbyname(host_addr)
+        ip = ipaddress.ip_address(ip_str)
+
+        if ip.is_loopback:
+            return True, f"'{host_addr}' resolves to loopback ({ip_str})."
+        if ip.is_private:
+            return True, f"'{host_addr}' resolves to private IP ({ip_str})."
+        
+        return False, None
+    except Exception:
+        return False, None
+
 if st.button("Connect"):
     if not all([host, user, password, database]):
         st.error("Please fill all required fields.")
     else:
+        is_private, reason = is_local_or_private(host)
+        if is_private:
+            st.warning(
+                f"⚠️ Cloud Warning: You are using a local/private host ({reason}).\n\n"
+            )
+        
         st.session_state.db_config = {
             "host": host,
             "user": user,
             "password": password,
             "database": database,
-            "port": port
+            "port": int(port)
         }
         st.success("Database configuration saved.")
 

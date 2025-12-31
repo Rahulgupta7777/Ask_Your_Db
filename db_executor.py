@@ -8,7 +8,10 @@ class DatabaseExecutor:
     def execute_query(self, sql: str):
         result = None 
         try:
-            conn = mysql.connector.connect(**self.config)
+            conn = mysql.connector.connect(
+                **self.config,
+                connection_timeout=5
+            )
             cursor = conn.cursor(dictionary=True)
             cursor.execute(sql)
 
@@ -29,7 +32,10 @@ class DatabaseExecutor:
             return f"SQL Error: {e}"
 
     def get_schema(self):
-        conn = mysql.connector.connect(**self.config)
+        conn = mysql.connector.connect(
+            **self.config,
+            connection_timeout=5
+        )
         cursor = conn.cursor()
 
         cursor.execute("""
