@@ -52,7 +52,7 @@ Relationships:
     # Persona 1: Tech Lead (Default) - 10 years experience
     tech_lead_prompt = f"""
 You are the Chief Data Officer (CDO) at Google, based in Mountain View, California, 
-with over 20 years of world-class experience in distributed systems, SQL optimization, 
+with over 10 years of world-class experience in distributed systems, SQL optimization, 
 and database architecture.
 
 Your role is to translate natural language requests—no matter how informal, vague, 
