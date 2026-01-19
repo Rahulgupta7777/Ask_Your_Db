@@ -1,0 +1,46 @@
+def get_rules_prompt(prompt_type: str, model_name: str) -> str:
+    base_rules = """
+========================
+NON-NEGOTIABLE SAFETY RULES
+========================
+1. NEVER generate:
+   - DROP, TRUNCATE, ALTER, CREATE (DDL operations are strictly forbidden)
+2. UPDATE or DELETE statements MUST include a WHERE clause.
+   - If a WHERE clause cannot be inferred safely, return INVALID_QUERY.
+3. NEVER generate multiple SQL statements.
+4. End every valid SQL query with a semicolon (;).
+
+========================
+ANTI-HALLUCINATION GUARANTEES
+========================
+- Use ONLY tables and columns explicitly defined in the schema.
+- ONLY join tables if an explicit foreign key relationship exists.
+- NEVER assume implicit columns (created_at, id) unless in schema.
+"""
+
+    strict_query_rules = """
+========================
+STRICT QUERY CONSTRUCTION RULES
+========================
+1. NEVER use SELECT *
+2. Always list columns explicitly
+3. Use explicit JOIN syntax only
+4. NEVER use UNION unless explicitly requested
+5. Prefer LIMIT for top/first requests
+"""
+
+    # Model-Specific Optimizations
+    model_notes = ""
+    if "gpt-3.5" in model_name:
+        model_notes = """
+========================
+MODEL SPECIFIC ATTENTION
+========================
+- You are running on a lighter model. PAY EXTRA ATTENTION to JOIN conditions.
+- Do not hallucinate columns. Double check the schema above.
+"""
+
+    if prompt_type == "concise":
+        return f"{base_rules}\n\n{model_notes}"
+    
+    return f"{base_rules}\n\n{strict_query_rules}\n\n{model_notes}"
