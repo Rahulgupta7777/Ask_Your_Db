@@ -7,9 +7,9 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 class SQLQueryGenerator:
-    def generate_sql(self, question: str, system_prompt: str) -> str:
+    def generate_sql(self, question: str, system_prompt: str, model_name: str = "gpt-4o") -> str:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": question}
