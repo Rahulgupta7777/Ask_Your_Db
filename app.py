@@ -132,8 +132,8 @@ if "db_config" in st.session_state:
 
     try:
         schema = db.get_schema()
-        # Pass the selected persona to build_system_prompt
-        system_prompt = build_system_prompt(schema, prompt_type=persona)
+        # Pass the selected persona and model to build_system_prompt for optimized context
+        system_prompt = build_system_prompt(schema, prompt_type=persona, model_name=model_name)
 
         with st.sidebar:
             st.header("Database Schema")
