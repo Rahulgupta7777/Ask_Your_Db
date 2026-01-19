@@ -6,6 +6,18 @@ def render_header():
         page_title="Ask Your sql database questions",
         layout="wide"
     )
+    
+    # Client-Side Heartbeat to prevent "Are you still there?" timeouts
+    st.markdown("""
+        <script>
+        function heartbeat() {
+            console.log("Heartbeat");
+            fetch(window.location.href);
+        }
+        setInterval(heartbeat, 60000); // Ping every 60 seconds
+        </script>
+    """, unsafe_allow_html=True)
+    
     st.title("Natural Language → SQL Generator")
     st.write("Ask questions in English and query your MySQL database.")
 
