@@ -1,4 +1,4 @@
-import mysql.connector
+import pymysql
 import pandas as pd
 
 class DatabaseExecutor:
@@ -8,11 +8,17 @@ class DatabaseExecutor:
     def execute_query(self, sql: str):
         result = None 
         try:
-            conn = mysql.connector.connect(
-                **self.config,
-                connection_timeout=5
+            # PyMySQL connection
+            conn = pymysql.connect(
+                host=self.config["host"],
+                user=self.config["user"],
+                password=self.config["password"],
+                database=self.config["database"],
+                port=int(self.config["port"]),
+                cursorclass=pymysql.cursors.DictCursor,
+                connect_timeout=5
             )
-            cursor = conn.cursor(dictionary=True)
+            cursor = conn.cursor()
             cursor.execute(sql)
 
             # If it's a SELECT query
@@ -32,9 +38,13 @@ class DatabaseExecutor:
             return f"SQL Error: {e}"
 
     def get_schema(self):
-        conn = mysql.connector.connect(
-            **self.config,
-            connection_timeout=5
+        conn = pymysql.connect(
+            host=self.config["host"],
+            user=self.config["user"],
+            password=self.config["password"],
+            database=self.config["database"],
+            port=int(self.config["port"]),
+            connect_timeout=5
         )
         cursor = conn.cursor()
 
