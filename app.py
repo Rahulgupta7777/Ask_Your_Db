@@ -90,20 +90,39 @@ if st.button("Connect"):
 with st.sidebar:
     st.title("⚙️ AI Configuration")
     
-    model_name = st.selectbox(
-        "Select Model",
-        options=["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
-        index=0,
-        help="Select the OpenAI model to use for SQL generation."
-    )
     
-    persona = st.selectbox(
-        "Select Persona",
-        options=["default", "concise", "explanatory"],
-        format_func=lambda x: x.capitalize(),
-        index=0,
-        help="Choose the AI's behavior: Tech Lead (Default), Strict SQL, or Explanatory."
+    complexity = st.radio(
+        "Complexity Level",
+        options=["Basic (Fast)", "Advanced (Smart)", "Custom"],
+        index=1,
+        help="Basic: GPT-3.5 + Strict SQL. Advanced: GPT-4o + Tech Lead. Custom: Choose manually."
     )
+
+    st.divider()
+
+    if complexity == "Basic (Fast)":
+        model_name = "gpt-3.5-turbo"
+        persona = "concise"
+        st.caption("🚀 **Config**: GPT-3.5-Turbo | Strict JSON SQL")
+    
+    elif complexity == "Advanced (Smart)":
+        model_name = "gpt-4o"
+        persona = "default"
+        st.caption("🧠 **Config**: GPT-4o | Tech Lead (10 yrs exp)")
+    
+    else: # Custom
+        model_name = st.selectbox(
+            "Select Model",
+            options=["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
+            index=0
+        )
+        
+        persona = st.selectbox(
+            "Select Persona",
+            options=["default", "concise", "explanatory"],
+            format_func=lambda x: x.capitalize(),
+            index=0
+        )
     
     st.divider()
 
