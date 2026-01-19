@@ -1,7 +1,8 @@
+import streamlit as st
+import re
 from src.models.sql_generator import SQLQueryGenerator
 from src.models.db_executor import DatabaseExecutor
 from src.models.prompts import SystemPromptBuilder
-from src.models.utils import is_local_or_private
 from src.models.utils import is_local_or_private
 from src.views import home_view, sidebar_view
 
