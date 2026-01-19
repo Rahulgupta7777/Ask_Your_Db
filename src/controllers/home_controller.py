@@ -2,7 +2,7 @@ import streamlit as st
 import re
 from src.models.sql_generator import SQLQueryGenerator
 from src.models.db_executor import DatabaseExecutor
-from src.models.prompt_config import build_system_prompt
+from src.models.prompt_config import SystemPromptBuilder
 from src.models.utils import is_local_or_private
 from src.views import home_view, sidebar_view
 
@@ -42,7 +42,11 @@ def _handle_connected_state(model_name, persona):
         schema = db.get_schema()
         sidebar_view.render_schema_viewer(schema)
         # Pre-build prompt
-        system_prompt = build_system_prompt(schema, prompt_type=persona, model_name=model_name)
+        system_prompt = SystemPromptBuilder(
+            schema=schema, 
+            prompt_type=persona, 
+            model_name=model_name
+        ).build()
     except Exception as e:
         st.error(f"Failed to connect to database: {e}")
         if st.button("Reset Connection"):

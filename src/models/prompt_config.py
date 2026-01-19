@@ -1,22 +1,32 @@
-def build_system_prompt(schema: dict, prompt_type: str = "default", model_name: str = "gpt-4o") -> str:
+class SystemPromptBuilder:
     """
-    Constructs the system prompt dynamically based on the schema, persona, and model.
+    Builder class for constructing the system prompt dynamically based on 
+    schema, persona, and model context.
     """
     
-    # 1. Schema Component
-    schema_text = _build_schema_section(schema)
-    
-    # 2. Role Component
-    role_text = _get_role(prompt_type)
-    
-    # 3. Rules Component (Model-Aware)
-    rules_text = _get_rules(prompt_type, model_name)
-    
-    # 4. Output Contract
-    output_contract = _get_output_format(prompt_type)
-    
-    # Assembly
-    full_prompt = f"""
+    def __init__(self, schema: dict, prompt_type: str = "default", model_name: str = "gpt-4o"):
+        self.schema = schema
+        self.prompt_type = prompt_type
+        self.model_name = model_name
+
+    def build(self) -> str:
+        """
+        Constructs and returns the full system prompt string.
+        """
+        # 1. Schema Component
+        schema_text = self._build_schema_section()
+        
+        # 2. Role Component
+        role_text = self._get_role()
+        
+        # 3. Rules Component (Model-Aware)
+        rules_text = self._get_rules()
+        
+        # 4. Output Contract
+        output_contract = self._get_output_format()
+        
+        # Assembly
+        full_prompt = f"""
 {role_text}
 
 {schema_text}
@@ -25,18 +35,17 @@ def build_system_prompt(schema: dict, prompt_type: str = "default", model_name: 
 
 {output_contract}
 """
-    return full_prompt.strip()
+        return full_prompt.strip()
 
+    def _build_schema_section(self) -> str:
+        ddl_text = ""
+        for table, columns in self.schema.items():
+            ddl_text += f"CREATE TABLE {table} (\n"
+            for col in columns:
+                ddl_text += f"  {col},\n"
+            ddl_text = ddl_text.rstrip(",\n") + "\n);\n\n"
 
-def _build_schema_section(schema: dict) -> str:
-    ddl_text = ""
-    for table, columns in schema.items():
-        ddl_text += f"CREATE TABLE {table} (\n"
-        for col in columns:
-            ddl_text += f"  {col},\n"
-        ddl_text = ddl_text.rstrip(",\n") + "\n);\n\n"
-
-    return f"""
+        return f"""
 ========================
 DATABASE SCHEMA (SOURCE OF TRUTH)
 ========================
@@ -46,21 +55,20 @@ You MUST NOT assume anything beyond it.
 {ddl_text}
 """
 
-
-def _get_role(prompt_type: str) -> str:
-    if prompt_type == "concise":
-        return """
+    def _get_role(self) -> str:
+        if self.prompt_type == "concise":
+            return """
 You are a strict SQL compiler. You receive natural language and output ONLY SQL.
 You have zero tolerance for ambiguity.
 """
-    elif prompt_type == "explanatory":
-        return """
+        elif self.prompt_type == "explanatory":
+            return """
 You are a helpful Senior Database Engineer and Educator.
 Your goal is to not only generate the correct SQL but also EXPLAIN your thought process
 and how the query works, so the user can learn.
 """
-    else: # default / tech_lead
-        return """
+        else: # default / tech_lead
+            return """
 You are the Chief Data Officer (CDO) at Google, based in Mountain View, California, 
 with over 10 years of world-class experience in distributed systems, SQL optimization, 
 and database architecture.
@@ -69,9 +77,8 @@ Your role is to translate natural language requests—no matter how informal, va
 or grammatically incorrect—into **safe, accurate, optimized, ANSI-compliant SQL**.
 """
 
-
-def _get_rules(prompt_type: str, model_name: str) -> str:
-    base_rules = """
+    def _get_rules(self) -> str:
+        base_rules = """
 ========================
 NON-NEGOTIABLE SAFETY RULES
 ========================
@@ -90,7 +97,7 @@ ANTI-HALLUCINATION GUARANTEES
 - NEVER assume implicit columns (created_at, id) unless in schema.
 """
 
-    strict_query_rules = """
+        strict_query_rules = """
 ========================
 STRICT QUERY CONSTRUCTION RULES
 ========================
@@ -101,10 +108,10 @@ STRICT QUERY CONSTRUCTION RULES
 5. Prefer LIMIT for top/first requests
 """
 
-    # Model-Specific Optimizations
-    model_notes = ""
-    if "gpt-3.5" in model_name:
-        model_notes = """
+        # Model-Specific Optimizations
+        model_notes = ""
+        if "gpt-3.5" in self.model_name:
+            model_notes = """
 ========================
 MODEL SPECIFIC ATTENTION
 ========================
@@ -112,20 +119,19 @@ MODEL SPECIFIC ATTENTION
 - Do not hallucinate columns. Double check the schema above.
 """
 
-    if prompt_type == "concise":
-        return f"{base_rules}\n\n{model_notes}"
-    
-    return f"{base_rules}\n\n{strict_query_rules}\n\n{model_notes}"
+        if self.prompt_type == "concise":
+            return f"{base_rules}\n\n{model_notes}"
+        
+        return f"{base_rules}\n\n{strict_query_rules}\n\n{model_notes}"
 
-
-def _get_output_format(prompt_type: str) -> str:
-    if prompt_type == "concise":
-        return """
+    def _get_output_format(self) -> str:
+        if self.prompt_type == "concise":
+            return """
 RETURN ONLY THE RAW SQL. NO MARKDOWN. NO EXPLANATIONS.
 If the query is invalid, return: INVALID_QUERY: <reason>
 """
-    elif prompt_type == "explanatory":
-        return """
+        elif self.prompt_type == "explanatory":
+            return """
 FORMATTING:
 1. First, provide the SQL query in a markdown block.
 2. Then, provide a bulleted explanation of the logic, joins, and filters used.
@@ -133,8 +139,8 @@ FORMATTING:
 
 If the query is invalid, explain politely why and suggest alternatives.
 """
-    else: # default
-        return """
+        else: # default
+            return """
 ========================
 FINAL OUTPUT CONTRACT
 ========================
