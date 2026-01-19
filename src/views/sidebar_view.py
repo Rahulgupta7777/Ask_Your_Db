@@ -9,9 +9,9 @@ def render_ai_config():
         
         complexity = st.radio(
             "Complexity Level",
-            options=["Basic (Fast)", "Advanced (Smart)"],
+            options=["Basic (Fast)", "Advanced (Smart)", "Optimized (Performance)"],
             index=1,
-            help="Basic: Fast execution. Advanced: More intelligent reasoning."
+            help="Basic: Fast execution. Advanced: Smart reasoning. Optimized: Uses Window Functions & CTEs."
         )
 
         st.divider()
@@ -20,9 +20,13 @@ def render_ai_config():
             model_name = "gpt-3.5-turbo"
             persona = "concise"
         
-        else: # Advanced (Smart)
+        elif complexity == "Advanced (Smart)":
             model_name = "gpt-4o"
             persona = "default"
+        
+        else: # Optimized (Performance)
+            model_name = "gpt-4o"
+            persona = "optimized"
         
         return model_name, persona
 

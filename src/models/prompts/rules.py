@@ -29,6 +29,16 @@ STRICT QUERY CONSTRUCTION RULES
 5. Prefer LIMIT for top/first requests
 """
 
+    optimized_query_rules = """
+========================
+OPTIMIZED PERFORMANCE RULES
+========================
+1. MANDATORY: Use Common Table Expressions (CTEs) for all complex queries to improve readability.
+2. MANDATORY: Use Window Functions (RANK, DENSE_RANK, ROW_NUMBER, LAG, LEAD) instead of self-joins or subqueries whenever possible.
+3. PREFER: `approx_distinct` or similar efficient functions if precise count is not strictly required (unless exact numbers are asked).
+4. AVOID: `SELECT DISTINCT` if `GROUP BY` is more appropriate.
+"""
+
     # Model-Specific Optimizations
     model_notes = ""
     if "gpt-3.5" in model_name:
@@ -42,5 +52,7 @@ MODEL SPECIFIC ATTENTION
 
     if prompt_type == "concise":
         return f"{base_rules}\n\n{model_notes}"
+    elif prompt_type == "optimized":
+        return f"{base_rules}\n\n{strict_query_rules}\n\n{optimized_query_rules}\n\n{model_notes}"
     
     return f"{base_rules}\n\n{strict_query_rules}\n\n{model_notes}"
