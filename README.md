@@ -1,4 +1,4 @@
-# NL to SQL Generator
+# Natural Language to SQL Generator
 
 A specific and powerful Streamlit application that allows users to query their MySQL database using natural language. The application uses OpenAI's GPT models to translate English questions into optimized, safe, and schema-aware SQL queries.
 
@@ -42,15 +42,11 @@ A specific and powerful Streamlit application that allows users to query their M
    ```bash
    pip install -r requirements.txt
    ```
-   *If `requirements.txt` is missing, install manually:*
-   ```bash
-   pip install streamlit openai python-dotenv mysql-connector-python pandas
-   ```
 
 4. **Configuration**
    Create a `.env` file in the root directory to store your API key securely:
    ```bash
-   echo "OPENAI_API_KEY=sk-your-api-key-here" > .env
+   echo "GROK_API_KEY=sk-your-api-key-here" > .env
    ```
    *(Make sure to add `.env` to your `.gitignore`)*
 
@@ -70,12 +66,7 @@ A specific and powerful Streamlit application that allows users to query their M
    - Click **Generate & Run**.
    - View the generated SQL and the resulting data.
 
-## Project Structure
 
-- `app.py`: Main Streamlit application entry point.
-- `sql_generator.py`: Handles interaction with OpenAI API to generate SQL.
-- `db_executor.py`: Manages database connections and query execution.
-- `prompt_config.py`: Contains the system prompt logic and schema definition.
 
 ## Security Note
 
