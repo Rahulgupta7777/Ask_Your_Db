@@ -9,15 +9,27 @@ class DatabaseExecutor:
         result = None 
         try:
             # PyMySQL connection
-            conn = pymysql.connect(
-                host=self.config["host"],
-                user=self.config["user"],
-                password=self.config["password"],
-                database=self.config["database"],
-                port=int(self.config["port"]),
-                cursorclass=pymysql.cursors.DictCursor,
-                connect_timeout=5
-            )
+            # PyMySQL connection
+            connect_args = {
+                "host": self.config["host"],
+                "user": self.config["user"],
+                "password": self.config["password"],
+                "database": self.config["database"],
+                "port": int(self.config["port"]),
+                "cursorclass": pymysql.cursors.DictCursor,
+                "connect_timeout": 5
+            }
+
+            # Check for SSL requirement
+            if self.config.get("ssl_enabled", False):
+                import ssl
+                # Create a context that generally allows connection (unverified for broad compatibility in this demo)
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                connect_args["ssl"] = ctx
+
+            conn = pymysql.connect(**connect_args)
             cursor = conn.cursor()
             cursor.execute(sql)
 
@@ -38,14 +50,23 @@ class DatabaseExecutor:
             return f"SQL Error: {e}"
 
     def get_schema(self):
-        conn = pymysql.connect(
-            host=self.config["host"],
-            user=self.config["user"],
-            password=self.config["password"],
-            database=self.config["database"],
-            port=int(self.config["port"]),
-            connect_timeout=5
-        )
+        connect_args = {
+            "host": self.config["host"],
+            "user": self.config["user"],
+            "password": self.config["password"],
+            "database": self.config["database"],
+            "port": int(self.config["port"]),
+            "connect_timeout": 5
+        }
+
+        if self.config.get("ssl_enabled", False):
+            import ssl
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            connect_args["ssl"] = ctx
+
+        conn = pymysql.connect(**connect_args)
         cursor = conn.cursor()
 
         cursor.execute("""

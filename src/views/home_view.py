@@ -1,6 +1,6 @@
 import streamlit as st
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 def render_header():
     st.set_page_config(
@@ -38,6 +38,7 @@ def render_connection_form():
 
     # Default values logic
     d_host, d_user, d_pass, d_db, d_port = "", "", "", "", 3306
+    d_ssl = False
 
     if db_url:
         try:
@@ -56,6 +57,18 @@ def render_connection_form():
             if parsed.path: d_db = parsed.path.lstrip('/')
             if parsed.port: d_port = parsed.port
             
+            # Parse query params for ssl-mode
+            if parsed.query:
+                qs = parse_qs(parsed.query)
+                # Check for ssl-mode=REQUIRED or similar
+                if 'ssl-mode' in qs:
+                    mode = qs['ssl-mode'][0].upper()
+                    if mode in ['REQUIRED', 'VERIFY_CA', 'VERIFY_IDENTITY']:
+                        d_ssl = True
+                # Also check common simple flags
+                if 'ssl' in qs:
+                    d_ssl = True
+
         except Exception:
             st.warning("Could not auto-parse the provided URL. Please fill fields manually.")
 
@@ -89,6 +102,12 @@ def render_connection_form():
         value=int(d_port),
         step=1
     )
+    
+    ssl_enabled = st.checkbox(
+        label="Enable SSL (Required for some cloud providers like Aiven, Azure)",
+        value=d_ssl,
+        help="Check this if your database requires an SSL connection (e.g. ssl-mode=REQUIRED)."
+    )
 
     if st.button("Connect"):
         if not all([host, user, password, database]):
@@ -100,7 +119,8 @@ def render_connection_form():
             "user": user,
             "password": password,
             "database": database,
-            "port": int(port)
+            "port": int(port),
+            "ssl_enabled": ssl_enabled
         }
     return None
 
