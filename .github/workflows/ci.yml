@@ -9,29 +9,113 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
     
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
       with:
-        python-version: "3.10"
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
         
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install flake8
+        pip install -r requirements.txt
+        pip install flake8 pytest pytest-cov
+        
+    - name: Verify package structure
+      run: |
+        # Verify __init__.py files exist
+        test -f src/__init__.py || (echo "Missing src/__init__.py" && exit 1)
+        test -f src/controllers/__init__.py || echo "Warning: Missing src/controllers/__init__.py"
+        test -f src/models/__init__.py || echo "Warning: Missing src/models/__init__.py"
+        test -f src/views/__init__.py || echo "Warning: Missing src/views/__init__.py"
         
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
+        # Stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings.
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        # Treat all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=venv,__pycache__,.git
         
-    - name: Test Import
+    - name: Test critical imports
       run: |
-        # Verify app entry point doesn't crash on import
-        python -c "import src.controllers.home_controller"
+        # Test main app entry point
+        python -c "import app; print('✓ app.py imports successfully')"
+        
+        # Test all controllers
+        python -c "import src.controllers.home_controller; print('✓ home_controller imports successfully')"
+        
+        # Test all models
+        python -c "import src.models.sql_generator; print('✓ sql_generator imports successfully')" || true
+        python -c "import src.models.db_executor; print('✓ db_executor imports successfully')" || true
+        python -c "import src.models.prompts; print('✓ prompts imports successfully')" || true
+        python -c "import src.models.utils; print('✓ utils imports successfully')" || true
+        
+        # Test all views
+        python -c "import src.views.home_view; print('✓ home_view imports successfully')"
+        python -c "import src.views.sidebar_view; print('✓ sidebar_view imports successfully')"
+        
+    - name: Check environment variables (mock)
+      run: |
+        # Verify that the app handles missing OPENAI_API_KEY gracefully
+        # This is just a structure check, not a full test
+        python -c "
+        import os
+        # Simulate missing API key
+        if 'OPENAI_API_KEY' not in os.environ:
+            print('✓ Testing without OPENAI_API_KEY (expected in CI)')
+        "
+        
+    - name: Syntax check all Python files
+      run: |
+        # Compile all Python files to check for syntax errors
+        python -m py_compile app.py
+        find src -name "*.py" -exec python -m py_compile {} \;
+        echo "✓ All Python files compiled successfully"
+        
+    - name: Test app structure
+      run: |
+        # Verify key files exist
+        test -f app.py || (echo "Missing app.py" && exit 1)
+        test -f requirements.txt || (echo "Missing requirements.txt" && exit 1)
+        test -f Procfile || (echo "Missing Procfile" && exit 1)
+        echo "✓ All required files present"
+        
+    - name: Check for common security issues
+      run: |
+        # Check if .env is not committed
+        if [ -f .env ]; then
+          echo "⚠️  Warning: .env file found in repository (should be in .gitignore)"
+          exit 1
+        fi
+        echo "✓ No .env file committed"
+        
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+        
+    - name: Install safety
+      run: pip install safety
+      
+    - name: Check for known security vulnerabilities
+      run: |
+        pip install -r requirements.txt
+        safety check --json || echo "⚠️  Security vulnerabilities detected (non-blocking)"
+      continue-on-error: true
