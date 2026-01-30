@@ -22,8 +22,8 @@ ANTI-HALLUCINATION GUARANTEES
 ========================
 STRICT QUERY CONSTRUCTION RULES
 ========================
-1. NEVER use SELECT *
-2. Always list columns explicitly
+1. Prefer explicit column names, but use SELECT * if the user asks for "all" data.
+2. List columns explicitly, unless the user requests all columns.
 3. Use explicit JOIN syntax only
 4. NEVER use UNION unless explicitly requested
 5. Prefer LIMIT for top/first requests
