@@ -1,5 +1,6 @@
 import streamlit as st
 import re
+from urllib.parse import urlparse
 
 def render_header():
     st.set_page_config(
@@ -26,30 +27,66 @@ def render_connection_form():
     Renders the database connection form. 
     Returns the config dict if connected/submitted, or None.
     """
+    st.subheader("Database Connection")
+
+    # Optional URL Input for auto-filling
+    db_url = st.text_input(
+        label="Quick Connect (Database URL)",
+        placeholder="mysql://user:password@host:port/database",
+        help="Paste a standard database connection string to auto-fill the fields below."
+    )
+
+    # Default values logic
+    d_host, d_user, d_pass, d_db, d_port = "", "", "", "", 3306
+
+    if db_url:
+        try:
+            # Helper to ensure parsing works for clean strings
+            if "://" not in db_url:
+                # Assume mysql if not provided, just for parsing structure
+                parse_url = f"mysql://{db_url}"
+            else:
+                parse_url = db_url
+            
+            parsed = urlparse(parse_url)
+            
+            if parsed.hostname: d_host = parsed.hostname
+            if parsed.username: d_user = parsed.username
+            if parsed.password: d_pass = parsed.password
+            if parsed.path: d_db = parsed.path.lstrip('/')
+            if parsed.port: d_port = parsed.port
+            
+        except Exception:
+            st.warning("Could not auto-parse the provided URL. Please fill fields manually.")
+
     host = st.text_input(
         label="Please provide your database host",
+        value=d_host,
         placeholder="Enter database host"
     )
 
     user = st.text_input(
         label="Please provide your database user",
+        value=d_user,
         placeholder="Enter database user"
     )
 
     password = st.text_input(
         label="Please provide your database password",
         type="password",
+        value=d_pass,
         placeholder="Enter password"
     )
 
     database = st.text_input(
         label="Please provide your database name",
+        value=d_db,
         placeholder="Enter database name"
     )
 
     port = st.number_input(
         label="Please provide your database port",
-        value=3306,
+        value=int(d_port),
         step=1
     )
 
