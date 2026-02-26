@@ -1,0 +1,8 @@
+streamlit
+openai
+python-dotenv
+pymysql
+pandas
+cryptography
+SQLAlchemy
+psycopg2-binary
