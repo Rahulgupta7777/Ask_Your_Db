@@ -1,85 +1,94 @@
-import pymysql
 import pandas as pd
+from sqlalchemy import create_engine, inspect, text
 
 class DatabaseExecutor:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict = None, db_url: str = None):
         self.config = config
-
-    def execute_query(self, sql: str):
-        result = None 
-        try:
-            # PyMySQL connection
-            # PyMySQL connection
-            connect_args = {
-                "host": self.config["host"],
-                "user": self.config["user"],
-                "password": self.config["password"],
-                "database": self.config["database"],
-                "port": int(self.config["port"]),
-                "cursorclass": pymysql.cursors.DictCursor,
-                "connect_timeout": 5
-            }
-
-            # Check for SSL requirement
+        self.db_url = db_url
+        self.engine = None
+        
+        url = self.db_url
+        connect_args = {}
+        
+        if not url and self.config:
+            # handle legacy config
+            host = self.config.get("host")
+            user = self.config.get("user")
+            password = self.config.get("password")
+            database = self.config.get("database")
+            port = self.config.get("port", 3306)
+            url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+            
             if self.config.get("ssl_enabled", False):
                 import ssl
-                # Create a context that generally allows connection (unverified for broad compatibility in this demo)
                 ctx = ssl.create_default_context()
                 ctx.check_hostname = False
                 ctx.verify_mode = ssl.CERT_NONE
                 connect_args["ssl"] = ctx
 
-            conn = pymysql.connect(**connect_args)
-            cursor = conn.cursor()
-            cursor.execute(sql)
+        if url:
+            if url.startswith("mysql://"):
+                url = url.replace("mysql://", "mysql+pymysql://", 1)
+            elif url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            
+            from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
+            parsed = urlparse(url)
+            qs = parse_qsl(parsed.query)
+            
+            new_qs = []
+            ssl_requested = False
+            for k, v in qs:
+                k_lower = k.lower()
+                if k_lower in ['ssl-mode', 'ssl_mode', 'sslmode', 'ssl']:
+                    if v.upper() in ['REQUIRED', 'REQUIRE', 'VERIFY_CA', 'VERIFY_IDENTITY', 'TRUE', '1']:
+                        ssl_requested = True
+                elif k_lower in ['pgbouncer', 'connection_limit', 'pool_timeout']:
+                    pass # ignore these pooler specific kwargs for sqlalchemy
+                else:
+                    new_qs.append((k, v))
+            
+            parsed = parsed._replace(query=urlencode(new_qs))
+            url = urlunparse(parsed)
+            
+            if ssl_requested:
+                if url.startswith("postgresql"):
+                    connect_args["sslmode"] = "require"
+                else:
+                    import ssl
+                    ctx = ssl.create_default_context()
+                    ctx.check_hostname = False
+                    ctx.verify_mode = ssl.CERT_NONE
+                    connect_args["ssl"] = ctx
+            
+            self.engine = create_engine(url, connect_args=connect_args, pool_recycle=3600)
 
-            # If it's a SELECT query
-            if sql.strip().lower().startswith("select"):
-                rows = cursor.fetchall()
-                result = pd.DataFrame(rows)
-            else:
-                # UPDATE / INSERT / DELETE
-                conn.commit()
-                result = f"Query executed successfully. Rows affected: {cursor.rowcount}"
+    def execute_query(self, sql: str):
+        if not self.engine:
+            return "Error: No database connection configured for execution."
             
-            cursor.close()
-            conn.close()
-            return result
-            
+        try:
+            with self.engine.connect() as conn:
+                sql_lower = sql.strip().lower()
+                if sql_lower.startswith(("select", "with", "show", "describe")):
+                    result = pd.read_sql(text(sql), conn)
+                    return result
+                else:
+                    result_proxy = conn.execute(text(sql))
+                    conn.commit()
+                    return f"Query executed successfully. Rows affected: {result_proxy.rowcount}"
         except Exception as e:
             return f"SQL Error: {e}"
 
     def get_schema(self):
-        connect_args = {
-            "host": self.config["host"],
-            "user": self.config["user"],
-            "password": self.config["password"],
-            "database": self.config["database"],
-            "port": int(self.config["port"]),
-            "connect_timeout": 5
-        }
+        """Fetches schema from live DB and returns it as a dictionary."""
+        if not self.engine:
+            raise Exception("No schema available (Not connected).")
 
-        if self.config.get("ssl_enabled", False):
-            import ssl
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-            connect_args["ssl"] = ctx
-
-        conn = pymysql.connect(**connect_args)
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = %s
-            ORDER BY TABLE_NAME;
-        """, (self.config["database"],))
-
+        inspector = inspect(self.engine)
         schema = {}
-        for table, column, dtype in cursor.fetchall():
-            schema.setdefault(table, []).append(f"{column} ({dtype})")
-
-        cursor.close()
-        conn.close()
+        for table_name in inspector.get_table_names():
+            columns = [f"{col['name']} ({col['type']})" for col in inspector.get_columns(table_name)]
+            schema[table_name] = columns
+        
         return schema

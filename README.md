@@ -2,11 +2,15 @@
 
 A specific and powerful Streamlit application that allows users to query their MySQL database using natural language. The application uses OpenAI's GPT models to translate English questions into optimized, safe, and schema-aware SQL queries.
 
+## Demo
+
+![Application Demo](./assets/demo.webp)
+
 ## Features
 
 - **Natural Language Interface**: Ask questions in plain English (e.g., "Show me the top 5 students by GPA").
 - **Schema-Aware**: Automatically fetches and understands your database structure (tables and columns).
-- **Safe SQL Generation**: 
+- **Safe SQL Generation**:
   - Read-only queries (SELECT) by default.
   - Strict safety rules against destructive commands (DROP, TRUNCATE) unless explicitly managed.
   - Sanitizes Markdown from LLM responses to prevent syntax errors.
@@ -22,12 +26,14 @@ A specific and powerful Streamlit application that allows users to query their M
 ## Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd nl-sql-generator
    ```
 
 2. **Set up a Virtual Environment** (Recommended)
+
    ```bash
    # macOS/Linux
    python3 -m venv venv
@@ -39,20 +45,24 @@ A specific and powerful Streamlit application that allows users to query their M
    ```
 
 3. **Install Dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Configuration**
    Create a `.env` file in the root directory to store your API key securely:
+
    ```bash
    echo "GROK_API_KEY=sk-your-api-key-here" > .env
    ```
+
    *(Make sure to add `.env` to your `.gitignore`)*
 
 ## Usage
 
 1. **Start the Application**
+
    ```bash
    streamlit run app.py
    ```
@@ -65,8 +75,6 @@ A specific and powerful Streamlit application that allows users to query their M
    - Type your question in the text area (e.g., "Review all students in the Engineering department").
    - Click **Generate & Run**.
    - View the generated SQL and the resulting data.
-
-
 
 ## Security Note
 

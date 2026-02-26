@@ -1,6 +1,0 @@
-streamlit
-openai
-python-dotenv
-pymysql
-pandas
-cryptography
