@@ -5,7 +5,7 @@ def render_ai_config():
     Renders the configuration sidebar and returns the fixed model and persona.
     """
     with st.sidebar:
-        st.title("Showing")
+        st.title("Sql Schema")
         st.info("write SQL queries for me")
         
         model_name = "gpt-4o"

@@ -23,7 +23,7 @@ def run():
             _handle_connected_state(model_name, persona)
 
 def _handle_manual_mode(model_name, persona):
-    schema_text = st.text_area("Paste your Table Schema or LeetCode Description here:", height=300)
+    schema_text = st.text_area("Paste your Table Schema", height=300)
     question, clicked = home_view.render_query_interface()
 
     if clicked and schema_text:
